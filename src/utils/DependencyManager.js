@@ -90,6 +90,24 @@ export default class DependencyManager extends EventEmitter {
       })
     )
 
+    // Auto-register GSAP plugins if gsap is available
+    if(this.#deps.gsap) {
+      const gsapPluginNames = Object.keys(this.#deps) // Changed from gsapPlugins as I only want to load required deps surely?
+      gsapPluginNames.forEach(name => {
+        const plugin = this.#deps[name]
+        if(typeof plugin === 'function' || (typeof plugin === 'object' && plugin !== null)) {
+          try {
+            this.#deps.gsap.registerPlugin(plugin)
+            this.emit('plugin:registered', {name, plugin})
+          } catch(err) {
+            console.warn(`Failed to register ${name}: `, err)
+          }
+        } else {
+          console.warn(`Invalid plugin type for ${name}:`, typeof plugin)
+        }
+      })
+    }
+
     window.Apex = window.Apex || {}
     window.Apex.deps = this.loaded
     window.Apex.DependencyManager = this
