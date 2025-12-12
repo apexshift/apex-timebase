@@ -82,7 +82,14 @@ export default class DependencyManager extends EventEmitter {
           const module = await loader()
           let instance = module.default ?? module[name] ?? module
 
-          if(depsConfig.instantiate?.includes(name)) instance = new instance()
+          // Apply custom Lenis config at instantiation
+          if (name === 'lenis' && depsConfig.instantiate?.includes(name)) {
+            let lenisConfig = override.lenisConfig ?? depsConfig.lenisConfig ?? {}
+            lenisConfig.autoRaf = true
+            instance = new instance(lenisConfig)
+          } else if (depsConfig.instantiate?.includes(name)) {
+            instance = new instance()
+          }
 
           this.#deps[name] = instance
           this.emit('dep:loaded', {name, instance})
@@ -134,6 +141,29 @@ export default class DependencyManager extends EventEmitter {
       }
 
       this.emit('preferred-scroller-resolved', {enabled, disabled, preferred})
+    }
+
+    // Smart Lenis: Full GSAP/ScrollTrigger integration if both available and Lenis is active
+    if (this.#deps.lenis && this.#deps.gsap) {
+      try {
+        if (this.#deps.ScrollTrigger) {
+          this.#deps.lenis.on('scroll', this.#deps.ScrollTrigger.update)
+        }
+
+        this.#deps.gsap.ticker.add((time) => {
+          this.#deps.lenis.raf(time * 1000)
+        })
+
+        if (this.#deps.ScrollTrigger) {
+          this.#deps.gsap.ticker.lagSmoothing(0)
+        }
+
+        console.log('%cSmart Lenis: fully synced with GSAP/ScrollTrigger', 'color:#00d1b2;font-weight:bold')
+        this.emit('smart-lenis-synced', { mode: 'full' })
+      } catch (err) {
+        console.warn('Failed to sync Lenis with GSAP/ScrollTrigger:', err)
+        this.emit('smart-lenis-sync-failed', { error: err })
+      }
     }
 
     window.Apex = window.Apex || {}
