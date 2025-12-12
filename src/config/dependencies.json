@@ -1,5 +1,5 @@
 {
-  "dependencies": ["gsap", "lenis"],
+  "core": ["gsap", "lenis"],
   "gsap_plugins": ["ScrollTrigger", "SplitText"],
   "instantiate": ["lenis"]
 }

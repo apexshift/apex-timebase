@@ -1,5 +1,5 @@
-// src/utils/DependencyManager.js
 import depsConfig from '../config/dependencies.json' with { type: 'json' }
+import EventEmitter from '../events/EventEmitter.js'
 
 const coreDependencies = {
   gsap: () => import('gsap'),
@@ -34,10 +34,17 @@ const loaders = {
   ...coreDependencies, 
   ...gsapPlugins
 }
-export default class DependencyManager {
+export default class DependencyManager extends EventEmitter {
   static #instance = null
   #deps = {}
   #ready = false
+
+  constructor() {
+    super()
+    if(DependencyManager.#instance) {
+      throw new Error(`Use DependencyManager.getInstance()`)
+    }
+  }
 
   static getInstance() {
     if (!this.#instance) this.#instance = new DependencyManager()
@@ -48,8 +55,10 @@ export default class DependencyManager {
   get loaded() { return Object.freeze({ ...this.#deps }) }
 
   async init(override = {}) {
+    this.emit('init:start')
+
     const config = {
-      deps: override.dependencies ?? depsConfig.dependencies,
+      deps: override.core ?? depsConfig.core,
       plugins: override.gsap_plugins ?? depsConfig.gsap_plugins
     }
 
@@ -59,20 +68,23 @@ export default class DependencyManager {
       all.map(async (name) => {
         const loader = loaders[name]
         if(!loader) {
+          const err = new Error(`No loader found for ${name}`)
+          this.emit('error', {name, error: err})
           console.warn(`no loader found for ${name}`)
           return
         }
 
         try {
-          // This works in both dev and build
           const module = await loader()
           let instance = module.default ?? module[name] ?? module
 
           if (depsConfig.instantiate?.includes(name)) instance = new instance()
 
           this.#deps[name] = instance
+          this.emit('dep:loaded', {name, instance})
           console.log(`%c${name} loaded`, 'color:#00ff9d')
         } catch (err) {
+          this.emit('error', {name, error: err})
           console.error(`Failed to load ${name}`, err)
         }
       })
@@ -83,6 +95,7 @@ export default class DependencyManager {
     window.Apex.DependencyManager = this
 
     this.#ready = true
+    this.emit('ready', this.loaded)
     console.log('%cAPEX/DEPMAN READY', 'color:#00ff9d;font-weight:bold', this.#deps)
   }
 }
