@@ -1,81 +1,84 @@
 // src/utils/DependencyManager.js
-import DEPENDENCY_CONFIG from '../config/dependencies.config.js'
+import depsConfig from '../config/dependencies.json' with { type: 'json' }
 
-const loaders = {
+const coreDependencies = {
   gsap: () => import('gsap'),
-  // Gsap Easing
+  lenis: () => import('lenis'),
+}
+
+const gsapPlugins = {
   CustomEase: () => import('gsap/CustomEase'),
-  CustomBounce: () => import('gsap/CustomBounce'), // Requires CustomEase
-  CustomWiggle: () => import('gsap/CustomWiggle'), // Requires CustomEase
-  EasePack: () => import('gsap/EasePack'),
-  // Gsap Plugins
   Draggable: () => import('gsap/Draggable'),
   DrawSVGPlugin: () => import('gsap/DrawSVGPlugin'),
   EaselPlugin: () => import('gsap/EaselPlugin'),
+  EasePack: () => import('gsap/EasePack'),
   Flip: () => import('gsap/Flip'),
   GSDevTools: () => import('gsap/GSDevTools'),
   InertiaPlugin: () => import('gsap/InertiaPlugin'),
+  MorphSVGPlugin: () => import('gsap/MorphSVGPlugin'),
   MotionPathHelper: () => import('gsap/MotionPathHelper'),
   MotionPathPlugin: () => import('gsap/MotionPathPlugin'),
-  MorphSVGPlugin: () => import('gsap/MorphSVGPlugin'),
   Observer: () => import('gsap/Observer'),
   Physics2DPlugin: () => import('gsap/Physics2DPlugin'),
   PhysicsPropsPlugin: () => import('gsap/PhysicsPropsPlugin'),
   PixiPlugin: () => import('gsap/PixiPlugin'),
   ScrambleTextPlugin: () => import('gsap/ScrambleTextPlugin'),
-  ScrollTrigger: () => import('gsap/ScrollTrigger'),
-  ScrollSmoother: () => import( 'gsap/ScrollSmoother'), // Requires ScrollTrigger
+  ScrollSmoother: () => import('gsap/ScrollSmoother'),
   ScrollToPlugin: () => import('gsap/ScrollToPlugin'),
+  ScrollTrigger: () => import('gsap/ScrollTrigger'),
   SplitText: () => import('gsap/SplitText'),
   TextPlugin: () => import('gsap/TextPlugin'),
-  // Other Libraries/Dependencies
-  lenis: () => import('lenis')
 }
 
+const loaders = {
+  ...coreDependencies, 
+  ...gsapPlugins
+}
 export default class DependencyManager {
   static #instance = null
-
   #deps = {}
   #ready = false
 
   static getInstance() {
-    if (!this.#instance) {
-      this.#instance = new DependencyManager()
-    }
+    if (!this.#instance) this.#instance = new DependencyManager()
     return this.#instance
   }
 
   get isReady() { return this.#ready }
   get loaded() { return Object.freeze({ ...this.#deps }) }
-  get(name) { return this.#deps[name] ?? null }
 
-  async init({ deps = DEPENDENCY_CONFIG.deps, plugins = DEPENDENCY_CONFIG.gsapPlugins } = {}) {
-    const all = [...new Set([...deps, ...plugins])]
+  async init(override = {}) {
+    const config = {
+      deps: override.dependencies ?? depsConfig.dependencies,
+      plugins: override.gsap_plugins ?? depsConfig.gsap_plugins
+    }
+
+    const all = [...new Set([...config.deps, ...config.plugins])]
 
     await Promise.all(
       all.map(async (name) => {
         const loader = loaders[name]
-        if (!loader) {
-          console.warn(`No loader for ${name}`)
+        if(!loader) {
+          console.warn(`no loader found for ${name}`)
           return
         }
 
         try {
-          const mod = await loader()
-          let lib = mod.default ?? mod[name] ?? mod
+          // This works in both dev and build
+          const module = await loader()
+          let instance = module.default ?? module[name] ?? module
 
-          if (DEPENDENCY_CONFIG.instantiate?.includes(name)) {
-            lib = new lib()
-          }
+          if (depsConfig.instantiate?.includes(name)) instance = new instance()
 
-          this.#deps[name] = lib
-          console.log(`%c${name} loaded`, 'color:#00ff9d;font-weight:bold')
-        } catch (e) {
-          console.error(`Failed to load ${name} –`, e)
+          this.#deps[name] = instance
+          console.log(`%c${name} loaded`, 'color:#00ff9d')
+        } catch (err) {
+          console.error(`Failed to load ${name}`, err)
         }
       })
     )
 
+    window.Apex = window.Apex || {}
     window.Apex.deps = this.loaded
     window.Apex.DependencyManager = this
 
