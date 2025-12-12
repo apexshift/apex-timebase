@@ -1,43 +1,81 @@
 # APEX/DEPMAN
 
-**The zero-config, manifest-driven, battle-tested dependency manager for high-performance creative websites.**
+**Config-driven, chunk-splitting dependency manager for Vite + vanilla JS projects**
 
-Built by [Apex Shift Ltd](https://apexshift.co.uk) — the UK studio that ships flawless, 60 fps experiences for global brands and daring startups.
+Built by Aaron Smyth at Apex Shift Ltd – https://apexshift.co.uk
 
-```bash
-npm install @apex/depman
-```
+A lightweight, zero-hard-coding dependency manager designed for high-performance creative websites. Loads only what you need, splits everything into perfect chunks, and scales effortlessly.
 
-```javascript
-import DependencyManager from '@apex/depman'
+## Current Status
 
-DependencyManager.getInstance({
-  deps: ['gsap', 'lenis'],
-  plugins: ['ScrollTrigger', 'SplitText', 'CustomBounce'],
-  preload: true
-}).init()
-```
-That’s it. No paths. No order bugs. No “it works on my machine”.
+- **Phase 1 complete** (v0.1.0) – Dynamic loading with automatic code-splitting
+- **Phase 2** – Events, auto-registration, dependency graph (in progress)
 
 ## Features
-- 100% manifest-driven (cache-busting safe)
-- Automatic dependency graph resolution (CustomBounce → pulls in CustomEase → gsap)
-- Full event system (ready, dep:loaded, plugin:loaded)
-- Singleton + immutable + fully encapsulated
-- Works with any Vite project out of the box
-- 100% test coverage from day one
-- Built for agencies, by an agency
 
-## Author
-Aaron Smyth
-Lead Developer and Founder – Apex Shift Ltd
+- Config-driven (single JSON file)
+- Automatic code-splitting (every dependency/plugin gets its own chunk)
+- Per-page overrides for performance
+- Auto-instantiation support
+- Global exposure via `window.Apex.deps`
+- Works in development and production
+- No manifest files, no Vite plugins required
 
-## Status
-**Phase 0 complete** – foundation locked
-**v0.0.4** – Singleton + ViTest + Docs + 100% Green Tests
-we're shipping **v1.0.0** in < 7 days.
+## Installation
+
+```bash
+npm i
+```
+
+## Configuration
+
+Edit **src/config/dependencies.json** to add or remove libraries:
+
+```json
+{
+  "core": ["gsap", "lenis"],
+  "gsap_plugins": ["ScrollTrigger", "SplitText", "Flip"],
+  "instantiate": ["lenis"]
+}
+```
+
+## Usage
+### 1. Basic – Load everything from the config (recommended for most pages)
+
+```javascript
+import DependencyManager from './src/utils/DependencyManager.js'
+DependencyManager.getInstance().init()
+```
+
+### 2. Override – Load only what you need, Performance mode (recommended for per page setups)
+
+```javascript
+import DependencyManager from './src/utils/DependencyManager.js'
+DependencyManager.getInstance().init({
+  core: ["gsap"],
+  gasp_plugins: ["ScrollTrigger"]
+})
+```
+
+### 3. Access loaded dependencies
+
+```javascript
+const {gsap, lenis, ScrollTrigger, SplitText} = window.Apex.deps
+
+// Ready to use!
+gsap.to('.box', { x: 300 })
+lenis.scrollTo(1000)
+ScrollTrigger.create({...})
+```
+
+## Phase History
+
+- **Phase 1** – Config-driven dynamic loading with perfect cache busting chunking
+- **Phase 2** – Events, auto-registration, dependency graph (in progress)
+- **Phase 3** – (planned)
 
 ## License
-MIT © Apex Shift Ltd 2025
+
+MIT &copy; Aaron Smyth – Apex Shift Ltd 2022-2025.
 ---
-Made with obsession in the UK by Aaron Smyth who refuses to ship broken websites.
+Made with passion in the UK by a developer who refuses to ship slow websites.
