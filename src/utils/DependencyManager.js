@@ -30,10 +30,7 @@ const gsapPlugins = {
   TextPlugin: () => import('gsap/TextPlugin'),
 }
 
-const loaders = {
-  ...coreDependencies, 
-  ...gsapPlugins
-}
+const loaders = {...coreDependencies, ...gsapPlugins}
 export default class DependencyManager extends EventEmitter {
   static #instance = null
   #deps = {}
@@ -41,7 +38,7 @@ export default class DependencyManager extends EventEmitter {
 
   constructor() {
     super()
-    if(DependencyManager.#instance) {
+    if (DependencyManager.#instance) {
       throw new Error(`Use DependencyManager.getInstance()`)
     }
   }
@@ -52,7 +49,7 @@ export default class DependencyManager extends EventEmitter {
   }
 
   get isReady() { return this.#ready }
-  get loaded() { return Object.freeze({ ...this.#deps }) }
+  get loaded() { return Object.freeze({...this.#deps }) }
 
   async init(override = {}) {
     this.emit('init:start')
@@ -62,12 +59,19 @@ export default class DependencyManager extends EventEmitter {
       plugins: override.gsap_plugins ?? depsConfig.gsap_plugins
     }
 
+    // Validate preferredScroller intent (early warning)
+    const preferred = override.preferredScroller ?? depsConfig.preferredScroller
+    if(preferred === "ScrollSmoother" && !config.plugins.includes('ScrollSmoother')) {
+      console.warn(`%c[APEX/DEPMAN] preferredScroller set to "ScrollSmoother" but ScrollSmoother not in gsap_plugins. Falling back to Lenis.`, 'color:#ff9800;font-weight:bold')
+      this.emit('preferred-scroller-missing', {preferred: 'ScrollSmoother'})
+    }
+
     const all = [...new Set([...config.deps, ...config.plugins])]
 
     await Promise.all(
       all.map(async (name) => {
         const loader = loaders[name]
-        if(!loader) {
+        if (!loader) {
           const err = new Error(`No loader found for ${name}`)
           this.emit('error', {name, error: err})
           console.warn(`no loader found for ${name}`)
@@ -78,7 +82,7 @@ export default class DependencyManager extends EventEmitter {
           const module = await loader()
           let instance = module.default ?? module[name] ?? module
 
-          if (depsConfig.instantiate?.includes(name)) instance = new instance()
+          if(depsConfig.instantiate?.includes(name)) instance = new instance()
 
           this.#deps[name] = instance
           this.emit('dep:loaded', {name, instance})
@@ -91,21 +95,45 @@ export default class DependencyManager extends EventEmitter {
     )
 
     // Auto-register GSAP plugins if gsap is available
-    if(this.#deps.gsap) {
-      const gsapPluginNames = Object.keys(this.#deps) // Changed from gsapPlugins as I only want to load required deps surely?
-      gsapPluginNames.forEach(name => {
-        const plugin = this.#deps[name]
-        if(typeof plugin === 'function' || (typeof plugin === 'object' && plugin !== null)) {
-          try {
-            this.#deps.gsap.registerPlugin(plugin)
-            this.emit('plugin:registered', {name, plugin})
-          } catch(err) {
-            console.warn(`Failed to register ${name}: `, err)
+    if (this.#deps.gsap) {
+      const requiredDependencies = Object.keys(this.#deps) // Changed from gsapPlugins as I only want to load required deps surely?
+      requiredDependencies.forEach(name => {
+          const plugin = this.#deps[name]
+          if (typeof plugin === 'function' || (typeof plugin === 'object' && plugin !== null)) {
+            try {
+              this.#deps.gsap.registerPlugin(plugin)
+              this.emit('plugin:registered', {name, plugin})
+            } catch (err) {
+              console.warn(`Failed to register ${name}: `, err)
+            }
+          } else {
+            console.warn(`Invalid plugin type for ${name}:`, typeof plugin)
           }
-        } else {
-          console.warn(`Invalid plugin type for ${name}:`, typeof plugin)
-        }
       })
+    }
+
+    // Ensure only one Scroll Jacking library is loaded (lenis is default)
+    if (this.#deps.lenis && this.#deps.ScrollSmoother) {
+      const preferred = override.preferredScroller ?? depsConfig.preferredScroller
+
+      let disabled = null
+      let enabled = null
+
+      if (preferred === 'ScrollSmoother') {
+        disabled = 'Lenis'
+        enabled = 'ScrollSmoother'
+        if (this.#deps.lenis.destroy) this.#deps.lenis.destroy()
+        delete this.#deps.lenis
+        console.debug(`%c[APEX/DEPMAN] scroll conflict resolved: ${enabled} enabled, ${disabled} disabled.`, 'color:#ff8900;font-weight:bold;')
+      } else {
+        // Default: favor Lenis (including invalid values)
+        disabled = 'ScrollSmoother'
+        enabled = 'Lenis'
+        if (this.#deps.ScrollSmoother.destroy) this.#deps.ScrollSmoother.destroy()
+        delete this.#deps.ScrollSmoother
+      }
+
+      this.emit('preferred-scroller-resolved', {enabled, disabled, preferred})
     }
 
     window.Apex = window.Apex || {}
