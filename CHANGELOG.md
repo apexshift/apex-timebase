@@ -2,6 +2,16 @@
 All notable changes to @apex/depman will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [0.1.0] - 2025-12-12
+### Added
+- Fully config-driven dependency loading
+- Automatic code-splitting of all deps/plugins
+- Clean separation of core deps and GSAP plugins
+- Per-page override support
+- Auto-instantiation via config
+- Global Apex exposure
+- Works in dev, build, and preview
+
 ## [0.0.4] - 2025-12-01
 ### Added
 - Professional README with correct branding[](https://apexshift.co.uk)
