@@ -1,6 +1,6 @@
 {
   "core": ["lenis", "gsap"],
-  "gsap_plugins": ["GSDevTools", "ScrollTrigger", "SplitText"],
+  "gsap_plugins": ["GSDevTools", "SplitText", "ScrollTrigger"],
   "instantiate": ["lenis"],
   "preferredScroller": "lenis",
   "lenisConfig": {

@@ -1,15 +1,23 @@
 # APEX/DEPMAN
 
-**Config-driven, chunk-splitting dependency manager for Vite + vanilla JS projects**
+**The zero-config, chunk-splitting, smart dependency manager for high-performance creative websites**
 
-Built by Aaron Smyth at Apex Shift Ltd – https://apexshift.co.uk
+Built by Aaron Smyth at [Apex Shift Ltd](https://apexshift.co.uk)
 
-A lightweight, zero-hard-coding dependency manager designed for high-performance creative websites. Loads only what you need, splits everything into perfect chunks, and scales effortlessly.
+→ Loads only what you need  
+→ Perfect code-splitting  
+→ GSAP plugins auto-register
+→ Lenis or ScrollSmoother out of the box 
+→ Lenis auto-synced with GSAP ticker  
+→ Smart conflict resolution  
+→ Events, overrides, config-driven  
+→ Works in dev and production
 
 ## Current Status
 
 - **Phase 1 complete** (v0.1.0) – Dynamic loading with automatic code-splitting
-- **Phase 2** – Events, auto-registration, dependency graph (in progress)
+- **Phase 2 complete** (v0.2.0) – Events, auto-registration, dependency graph
+
 
 ## Features
 
@@ -35,7 +43,14 @@ Edit **src/config/dependencies.json** to add or remove libraries:
 {
   "core": ["gsap", "lenis"],
   "gsap_plugins": ["ScrollTrigger", "SplitText", "Flip"],
-  "instantiate": ["lenis"]
+  "instantiate": ["lenis"],
+  "preferredScroller": "lenis",
+  "lenisConfig": {
+    "duration": 1.2,
+    "easing": "easeOutExpo",
+    "smoothWheel": true,
+    "smoothTouch": false
+  }
 }
 ```
 
@@ -47,7 +62,7 @@ import DependencyManager from './src/utils/DependencyManager.js'
 DependencyManager.getInstance().init()
 ```
 
-### 2. Override – Load only what you need, Performance mode (recommended for per page setups)
+### Load only what you need (performance mode)
 
 ```javascript
 import DependencyManager from './src/utils/DependencyManager.js'
@@ -60,19 +75,45 @@ DependencyManager.getInstance().init({
 ### 3. Access loaded dependencies
 
 ```javascript
-const {gsap, lenis, ScrollTrigger, SplitText} = window.Apex.deps
+const {gsap, lenis, ScrollTrigger} = window.Apex.deps
 
-// Ready to use!
-gsap.to('.box', { x: 300 })
+// Everything just works – no registerPlugin() needed
+gsap.to('.box', { 
+  x: 500,
+  scrollTrigger: {
+    trigger: '.box',
+    start: "top 80%",
+    scrub: true
+  }
+})
 lenis.scrollTo(1000)
-ScrollTrigger.create({...})
+```
+
+## Events (reactive)
+
+```javascript
+const manager = DependencyManager.getInstance()
+manager.on('ready', () => console.log('All dependencies ready'))
+manager.on('dep:loaded', ({name}) => console.debug(name, 'loaded'))
+manager.on('scroll-conflict-resolved', ({enabled, disabled}) => console.debug(`Using ${enabled}, ${disabled} disabled.`))
+```
+
+## Override Lenis config per-page
+
+```javascript
+manager.init({
+  lenisConfig: {
+    duration: 2,
+    smoothWheel: false
+  }
+})
 ```
 
 ## Phase History
 
 - **Phase 1** – Config-driven dynamic loading with perfect cache busting chunking
-- **Phase 2** – Events, auto-registration, dependency graph (in progress)
-- **Phase 3** – (planned)
+- **Phase 2** – Events, auto-registration, dependency graph
+- **Phase 3** – Testing, docs, release (in progress)
 
 ## License
 
