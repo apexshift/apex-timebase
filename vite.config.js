@@ -14,5 +14,5 @@ export default defineConfig({
         chunkFileNames: 'assets/chunks/[name]-[hash].js',
       },
     },
-  },
+  }
 })

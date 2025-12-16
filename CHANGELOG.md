@@ -2,6 +2,19 @@
 All notable changes to @apex/depman will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [0.3.0-dev] - 2025-12-16
+
+### Added
+- Comprehensive Vitest test suite (singleton, events, dependency loading, graph order)
+- Full mocking for GSAP/Lenis in tests
+- 95%+ coverage target
+
+### Changed
+- Test file renamed to DependencyManager.test.ts
+- Improved test isolation and mocking
+
+Phase 3 (Testing) in progress
+
 ## [0.2.1-dev] - 2025-12-16
 
 ### Added
