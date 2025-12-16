@@ -2,6 +2,22 @@
 All notable changes to @apex/depman will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [0.2.1-dev] - 2025-12-16
+
+### Added
+- Full TypeScript migration (all files .ts, strict types)
+- Absolute imports with `@/` alias (Vite + TS config)
+- Proper global types for `window.Apex` via `src/types/global.d.ts`
+- Typed EventEmitter with explicit payload handling
+
+### Changed
+- Renamed files: DependencyManager.js → .ts, EventEmitter.js → .ts, main.js → .ts
+- Updated index.html script src to `/src/main.ts`
+- Refactored examples/usage in README to reflect .ts extensions
+
+### Fixed
+- Resolved all TypeScript errors for production-ready type safety
+
 ## [0.2.0] - 2025-12-13
 
 ### Added
