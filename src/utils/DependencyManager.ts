@@ -1,6 +1,22 @@
-// src/utils/DependencyManager.js
-import depsConfig from '../config/dependencies.json' with { type: 'json' }
-import EventEmitter from '../events/EventEmitter.ts'
+import depsConfig from '@/config/dependencies.json' with { type: 'json' }
+import EventEmitter from '@/events/EventEmitter'
+
+
+interface DepsConfig {
+  core: string[]
+  gsap_plugins: string[]
+  instantiate?: string[]
+  preferredScroller?: 'lenis' | 'ScrollSmoother'
+  lenisConfig?: Record<string, any>
+  dependencyGraph?: Record<string, string[]>
+}
+
+type Override = Partial<{
+  core: string[],
+  gsap_plugins: string[],
+  lenisConfig: Record<string, any>
+  preferredScroller: 'lenis' | 'ScrollSmoother'
+}>
 
 const coreDependencies = {
   gsap: () => import('gsap'),
@@ -46,8 +62,8 @@ const loaders = {
 }
 
 export default class DependencyManager extends EventEmitter {
-  static #instance = null
-  #deps = {}
+  static #instance: DependencyManager | null = null
+  #deps: Record<string, any> = {}
   #ready = false
 
   constructor() {
@@ -59,14 +75,14 @@ export default class DependencyManager extends EventEmitter {
 
   static getInstance() {
     if (!this.#instance) this.#instance = new DependencyManager()
-    return this.#instance
+    return this.#instance as DependencyManager
   }
 
   get isReady() { return this.#ready }
   get loaded() { return Object.freeze({ ...this.#deps }) }
 
-  async init(override = {}) {
-    this.emit('init:start')
+  async init(override: Partial<{core: string[]; gsap_plugins: string[]; lenisConfig: Record<string, any>; preferredScroller: 'lenis' | 'ScrollSmoother' }> = {}) {
+    this.emit('init:start', undefined)
 
     await this.#loadDependencies(override)
     this.#registerGsapPlugins()
@@ -77,7 +93,7 @@ export default class DependencyManager extends EventEmitter {
   }
 
   // 1. Load dependencies with config override
-  async #loadDependencies(override) {
+  async #loadDependencies(override: Partial<{ core: string[]; gsap_plugins: string[]; lenisConfig: Record<string, any>; preferredScroller: 'lenis' | 'ScrollSmoother' }> = {}) {
     const config = {
       deps: override.core ?? depsConfig.core,
       plugins: override.gsap_plugins ?? depsConfig.gsap_plugins
@@ -88,8 +104,8 @@ export default class DependencyManager extends EventEmitter {
     const loadOrder = this.#resolveGsapDependencyGraph(all)
 
     await Promise.all(
-      loadOrder.map(async (name) => {
-        const loader = loaders[name]
+      loadOrder.map(async (name: string) => {
+        const loader = (loaders as Record<string, () => Promise<any>>)[name]
         if (!loader) {
           const err = new Error(`No loader found for ${name}`)
           this.emit('error', { name, error: err })
@@ -137,7 +153,7 @@ export default class DependencyManager extends EventEmitter {
   }
 
   // 3. Resolve scroll conflict
-  #resolveScrollConflict(override) {
+  #resolveScrollConflict(override: Partial<{ core: string[]; gsap_plugins: string[]; lenisConfig: Record<string, any>; preferredScroller: 'lenis' | 'ScrollSmoother' }> = {}) {
     if (!this.#deps.lenis || !this.#deps.ScrollSmoother) return
 
     const preferred = override.preferredScroller ?? depsConfig.preferredScroller ?? 'lenis'
@@ -171,7 +187,7 @@ export default class DependencyManager extends EventEmitter {
         this.#deps.lenis.on('scroll', this.#deps.ScrollTrigger.update)
       }
 
-      this.#deps.gsap.ticker.add((time) => {
+      this.#deps.gsap.ticker.add((time: number) => {
         this.#deps.lenis.raf(time * 1000)
       })
 
@@ -188,21 +204,21 @@ export default class DependencyManager extends EventEmitter {
   }
 
   // 5. Resolve dependency graph – auto-include and correct load order (gsap phase)
-  #resolveGsapDependencyGraph(requestedNames) {
+  #resolveGsapDependencyGraph(requestedNames: string[]) {
     const GSAP_PLUGIN_NAMES = new Set(Object.keys(gsapPlugins))
     const userGraph = depsConfig.dependencyGraph || {}
     const graph = {...GSAP_DEPENDENCY_GRAPH, ...userGraph}
 
     const toLoad = new Set(requestedNames)
     const visited = new Set()
-    const order = []
+    const order: string[] = []
 
-    const visit = name => {
+    const visit = (name: string) => {
       if(visited.has(name)) return
       visited.add(name)
 
-      const deps = graph[name] || []
-      deps.forEach(dep => {
+      const deps = (graph as Record<string, string[]>)[name] || []
+      deps.forEach((dep: string) => {
         if(!toLoad.has(dep)) {
           console.info(`%c[APEX/DEPMAN] Auto-including dependency: ${dep} ← required by ${name}`, 'color:#00bcd4')
           toLoad.add(dep)
@@ -229,7 +245,7 @@ export default class DependencyManager extends EventEmitter {
 
   // 6. Finalize initialization
   #finalize() {
-    window.Apex = window.Apex || {}
+    window.Apex ??= {}
     window.Apex.deps = this.loaded
     window.Apex.DependencyManager = this
 

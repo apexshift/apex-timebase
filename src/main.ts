@@ -1,7 +1,9 @@
-import DependencyManager from './utils/DependencyManager.ts'
+import DependencyManager from '@/utils/DependencyManager'
+
 const manager = DependencyManager.getInstance()
 manager.on('plugin:registered', ({ name }) => console.log(`${name} auto-registered!`))
 manager.on('ready', () => {
+  if(!window.Apex?.deps) return
   const {gsap, ScrollTrigger, lenis} = window.Apex.deps
   if(gsap) {
     const instances = document.querySelectorAll('.spacer');

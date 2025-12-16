@@ -11,7 +11,7 @@ export default class EventEmitter {
    * @param {Function} callback
    * @returns {Function} unsubscribe function
    */
-  on(event, callback) {
+  on(event: string, callback: (payload: any) => void): () => void {
     if(!this.#listeners.has(event)) {
       this.#listeners.set(event, new Set())
     }
@@ -24,7 +24,7 @@ export default class EventEmitter {
    * @param {string} event
    * @param {Function} callback
    */
-  once(event, callback) {
+  once(event: string, callback: (payload: any) => void): () => void {
     const unsub = this.on(event, (...args) => {
       unsub()
       callback(...args)
@@ -37,7 +37,7 @@ export default class EventEmitter {
    * @param {string} event
    * @param {Function} callback
    */
-  off(event, callback) {
+  off(event: string, callback: (payload: any) => void): void {
     this.#listeners.get(event)?.delete(callback)
   }
 
@@ -46,8 +46,8 @@ export default class EventEmitter {
    * @param {string} event
    * @param {any} payload
    */
-  emit(event, payload) {
-    this.#listeners.get(event)?.forEach(cb => {
+  emit(event: string, payload?: any): void {
+    this.#listeners.get(event)?.forEach((cb: (payload: any) => void) => {
       try {
         cb(payload)
       } catch(error) {

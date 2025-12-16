@@ -9,5 +9,6 @@
     "smoothWheel": true,
     "smoothTouch": false,
     "normalizeWheel": true
-  }
+  },
+  "dependencyGraph": {}
 }
