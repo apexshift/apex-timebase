@@ -16,7 +16,8 @@ Built by Aaron Smyth at [Apex Shift Ltd](https://apexshift.co.uk)
 ## Current Status
 
 - **Phase 1 complete** (v0.1.0) – Dynamic loading with automatic code-splitting
-- **Phase 2 complete** (v0.2.0) – Events, auto-registration, dependency graph
+- **Phase 2 complete** (v0.2.1) – Events, auto-registration, dependency graph
+- **Phase 3 complete** (v0.3.1-dev) – Comprehensive Vitest suite with 100% core coverage (singleton, events, loading, graph, overrides, conflict resolution, errors) 
 
 
 ## Features
@@ -122,7 +123,8 @@ manager.init({
 - **Phase 1** – Config-driven dynamic loading with perfect cache busting chunking (completed)
 - **Phase 2** – Events, auto-registration, dependency graph (completed)
 - **Phase 2.1** - Typescript migration (completed)
-- **Phase 3** – Comprehensive testing + documentation (in progress)
+- **Phase 3** – Comprehensive testing + documentation (completed)
+- **Phase 4** – Code review and optimisations (pending)
 
 ## License
 

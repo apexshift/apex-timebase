@@ -58,4 +58,56 @@ describe('DependencyManager', () => {
 
     expect(order).toEqual(['ScrollTrigger', 'gsap'])  // Correct order: plugin first, then gsap (graph auto-includes gsap after plugin)
   })
+
+  // Test X: Scroll conflict resolution
+  it('resolves scroll conflict based on preferredScroller', async () => {
+    const conflictSpy = vi.fn()
+    manager.on('scroll-conflict-resolved', conflictSpy)
+
+    vi.mock('gsap', () => ({ default: { registerPlugin: vi.fn(), ticker: { add: vi.fn(), lagSmoothing: vi.fn() } } }))
+    vi.mock('gsap/ScrollSmoother', () => ({ default: { destroy: vi.fn() } }))
+    vi.mock('lenis', () => ({ default: class { destroy() {} on() {} raf() {} } }))
+
+    await manager.init({
+      core: ['lenis'],
+      gsap_plugins: ['ScrollSmoother'],
+      preferredScroller: 'ScrollSmoother'
+    })
+
+    expect(conflictSpy).toHaveBeenCalledWith({
+      enabled: 'ScrollSmoother',
+      disabled: 'Lenis',
+      preferred: 'ScrollSmoother'
+    })
+  })
+
+  // Test X: Per-page overrides
+  it('applies per-page overrides', async () => {
+    const spy = vi.fn()
+    manager.on('dep:loaded', spy)
+
+    vi.mock('gsap', () => ({ default: {} }))
+    vi.mock('gsap/SplitText', () => ({ default: {} }))
+
+    await manager.init({
+      core: [],
+      gsap_plugins: ['SplitText']
+    })
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ name: 'gsap' } ))
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ name: 'SplitText' } ))
+  })
+
+  // Test X: Error Handling
+  it('handles missing loader gracefully', async () => {
+    const errorSpy = vi.fn()
+    manager.on('error', errorSpy)
+
+    await manager.init({ core: ['nonexistent'] })
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'nonexistent',
+      error: expect.any(Error)
+    }))
+  })
 })
