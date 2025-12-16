@@ -1,6 +1,6 @@
 // src/utils/DependencyManager.js
 import depsConfig from '../config/dependencies.json' with { type: 'json' }
-import EventEmitter from '../events/EventEmitter.js'
+import EventEmitter from '../events/EventEmitter.ts'
 
 const coreDependencies = {
   gsap: () => import('gsap'),

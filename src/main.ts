@@ -1,4 +1,4 @@
-import DependencyManager from './utils/DependencyManager.js'
+import DependencyManager from './utils/DependencyManager.ts'
 const manager = DependencyManager.getInstance()
 manager.on('plugin:registered', ({ name }) => console.log(`${name} auto-registered!`))
 manager.on('ready', () => {
