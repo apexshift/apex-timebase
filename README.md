@@ -11,18 +11,19 @@ Built by Aaron Smyth at (Apex Shift Ltd)[https://apexshift.co.uk]
 → Works in dev and production
 
 ## Current Status
-Phase 3 complete (v0.3.2-dev) – Comprehensive Vitest suite (13 passing tests, 2 config paths skipped due to ESM limitations)
-Coverage: ~69% statements (100% on EventEmitter, core logic fully tested)
+**v1.0.0 ready** – All phases completed
+- Phase 4 complete (Dec 17, 2025) – Bundle size < 4kb gzipped, production console silence, tree-shaking verfied
 
 ## Features
-Config-driven (single JSON file)
-Automatic code-splitting (every dependency/plugin gets its own chunk)
-Per-page overrides for performance
-Auto-instantiation support
-Global exposure via window.Apex.deps
-Works in development and production
-No manifest files, no Vite plugins required
-Full test coverage of core behaviors (singleton, events, loading, graph, overrides, conflict resolution, errors)
+- Config-driven (single JSON file)
+- Automatic code-splitting (every dependency/plugin gets its own chunk)
+- Per-page overrides for performance
+- Auto-instantiation support
+- Global exposure via window.Apex.deps
+- Works in development and production
+- No manifest files, no Vite plugins required
+- Full test coverage of core behaviors (singleton, events, loading, graph, overrides, conflict resolution, errors)
+- Production-optimised (no console logs/warns)
 
 ## Installation
 ```bash
@@ -46,18 +47,19 @@ Edit `src/config/dependencies.json` to add or remove libraries:
     "easing": "easeOutExpo",
     "smoothWheel": true,
     "smoothTouch": false
-  }
+  },
+  "dependencyGraph": {}
 }
 ```
 
 ## Usage
-1. Basic – Load everything from the config
+1. Basic – Load from config
 ```javascript
 import DependencyManager from '@/utils/DependencyManager'
 DependencyManager.getInstance().init()
 ```
 
-2. Load only what you need
+2. Load specific dependencies
 ```javascript
 import DependencyManager from '@/utils/DependencyManager'
 DependencyManager.getInstance().init({
@@ -65,7 +67,8 @@ DependencyManager.getInstance().init({
   gsap_plugins: ["ScrollTrigger"]
 })
 ```
-3. Access loaded dependencies
+
+## Access loaded dependencies
 ```javascript
 const {gsap, lenis, ScrollTrigger} = window.Apex.deps
 
@@ -87,6 +90,7 @@ manager.on('ready', () => console.log('All dependencies ready'))
 manager.on('dep:loaded', ({name}) => console.debug(name, 'loaded'))
 manager.on('scroll-conflict-resolved', ({enabled, disabled}) => console.debug(`Using ${enabled}, ${disabled} disabled.`))
 ```
+
 ## Override Lenis config per-page
 ```javascript
 manager.init({
@@ -104,7 +108,7 @@ manager.init({
 **Phase 3** – Comprehensive testing + documentation (complete)
 **Phase 3.1** – Advanced Testing (complete)
 **Phase 3.2** – Test Coverage (complete)
-**Phase 4** – Code review & optimizations (pending)
+**Phase 4** – Code review & optimizations (complete)
 
 ## License
 MIT © Aaron Smyth – Apex Shift Ltd 2022-2025.

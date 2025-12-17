@@ -2,6 +2,21 @@
 All notable changes to @apex/depman will be documented in this file.
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.0.0] - 2025-12-17
+
+### Added
+- Phase 4 complete: Production optimizations
+- Bundle size <4kB gzipped (manager chunk 3.42kB)
+- All console logs/warns silenced in production
+- Tree-shaking verified – only loaded deps bundled
+- Full code review and JSDoc documentation
+
+### Changed
+- Project ready for release
+
+### Release
+v1.0.0 – Professional, agency-ready dependency manager.
+
 ## [0.3.2-dev] - 2025-12-17
 
 ### Added

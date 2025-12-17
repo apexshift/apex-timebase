@@ -1,6 +1,6 @@
 {
   "name": "@apex/depman",
-  "version": "0.3.2-dev",
+  "version": "1.0.0",
   "private": false,
   "type": "module",
   "scripts": {

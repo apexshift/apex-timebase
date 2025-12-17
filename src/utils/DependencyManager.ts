@@ -73,14 +73,48 @@ export default class DependencyManager extends EventEmitter {
     }
   }
 
-  static getInstance() {
+  /**
+   * Returns the singleton instance of DependencyManager.
+   * 
+   * @returns {DependencyManager} The single shared instance
+   */
+  static getInstance(): DependencyManager {
     if (!this.#instance) this.#instance = new DependencyManager()
     return this.#instance as DependencyManager
   }
 
-  get isReady() { return this.#ready }
-  get loaded() { return Object.freeze({ ...this.#deps }) }
+  /**
+   * Indicates whether all requested dependencies have finished loading and are ready for use.
+   * 
+   * @returns {boolean} true when initialization is complete
+   */
+  get isReady(): boolean { return this.#ready }
+  /**
+   * Returns a frozen shallow copy of the loaded dependencies.
+   * Exposed globally as `window.Apex.deps` after initialization.
+   * 
+   * @returns {Readonly<Record<string, any>>} Immutable view of loaded libraries/plugins
+   */
+  get loaded(): Readonly<Record<string, any>> { return Object.freeze({ ...this.#deps }) }
 
+  /**
+   * Initializes the dependency manager.
+   * 
+   * Loads dependencies based on `dependencies.json` config, applying optional per-page override.
+   * Performs auto-registration of GSAP plugins, resolves scroll conflicts, syncs Lenis with GSAP ticker,
+   * and exposes loaded deps on `window.Apex`.
+   * 
+   * Emits events: `init:start`, `dep:loaded`, `plugin:registered`, `scroll-conflict-resolved`,
+   * `smart-lenis-synced`, `ready`, and `error` on failure.
+   * 
+   * @param override Optional partial override of config
+   * @param override.core Override core dependencies (e.g. ['gsap'])
+   * @param override.gsap_plugins Override GSAP plugins to load
+   * @param override.lenisConfig Custom Lenis options for this page
+   * @param override.preferredScroller 'lenis' or 'ScrollSmoother' to resolve conflict
+   * 
+   * @returns {Promise<void>}
+   */
   async init(override: Partial<{core: string[]; gsap_plugins: string[]; lenisConfig: Record<string, any>; preferredScroller: 'lenis' | 'ScrollSmoother' }> = {}) {
     this.emit('init:start', undefined)
 
@@ -109,7 +143,7 @@ export default class DependencyManager extends EventEmitter {
         if (!loader) {
           const err = new Error(`No loader found for ${name}`)
           this.emit('error', { name, error: err })
-          console.warn(`no loader found for ${name}`)
+          if(import.meta.env.DEV) console.warn(`no loader found for ${name}`)
           return
         }
 
@@ -126,10 +160,10 @@ export default class DependencyManager extends EventEmitter {
 
           this.#deps[name] = instance
           this.emit('dep:loaded', { name, instance })
-          console.log(`%c${name} loaded`, 'color:#00ff9d')
+          if(import.meta.env.DEV) console.log(`%c${name} loaded`, 'color:#00ff9d')
         } catch (err) {
           this.emit('error', { name, error: err })
-          console.error(`Failed to load ${name}`, err)
+          if(import.meta.env.DEV) console.error(`Failed to load ${name}`, err)
         }
       })
     )
@@ -146,7 +180,8 @@ export default class DependencyManager extends EventEmitter {
           this.#deps.gsap.registerPlugin(plugin)
           this.emit('plugin:registered', { name, plugin })
         } catch (err) {
-          console.warn(`Failed to register ${name}:`, err)
+          this.emit('error', { name, error: err })
+          if(import.meta.env.DEV) console.warn(`Failed to register ${name}:`, err)
         }
       }
     })
@@ -174,7 +209,7 @@ export default class DependencyManager extends EventEmitter {
     }
 
     const message = `[APEX/DEPMAN] Scroll conflict resolved: ${enabled} enabled, ${disabled} disabled.`
-    console.warn('%c' + message, 'color:#ff9800;font-weight:bold')
+    if (import.meta.env.DEV) console.warn('%c' + message, 'color:#ff9800;font-weight:bold')
     this.emit('scroll-conflict-resolved', { enabled, disabled, preferred })
   }
 
@@ -195,10 +230,10 @@ export default class DependencyManager extends EventEmitter {
         this.#deps.gsap.ticker.lagSmoothing(0)
       }
 
-      console.log('%cSmart Lenis: fully synced with GSAP/ScrollTrigger', 'color:#00d1b2;font-weight:bold')
+      if (import.meta.env.DEV) console.log('%cSmart Lenis: fully synced with GSAP/ScrollTrigger', 'color:#00d1b2;font-weight:bold')
       this.emit('smart-lenis-synced', { mode: 'full' })
     } catch (err) {
-      console.warn('Failed to sync Lenis with GSAP/ScrollTrigger:', err)
+      if (import.meta.env.DEV) console.warn('Failed to sync Lenis with GSAP/ScrollTrigger:', err)
       this.emit('smart-lenis-sync-failed', { error: err })
     }
   }
@@ -220,7 +255,7 @@ export default class DependencyManager extends EventEmitter {
       const deps = (graph as Record<string, string[]>)[name] || []
       deps.forEach((dep: string) => {
         if(!toLoad.has(dep)) {
-          console.info(`%c[APEX/DEPMAN] Auto-including dependency: ${dep} ← required by ${name}`, 'color:#00bcd4')
+          if (import.meta.env.DEV) console.info(`%c[APEX/DEPMAN] Auto-including dependency: ${dep} ← required by ${name}`, 'color:#00bcd4')
           toLoad.add(dep)
         }
         visit(dep)
@@ -228,7 +263,7 @@ export default class DependencyManager extends EventEmitter {
 
       // Auto-infer gsap for any GSAP plugin
       if(GSAP_PLUGIN_NAMES.has(name) && !toLoad.has('gsap')) {
-        console.info(`%c[APEX/DEPMAN] Auto-including gsap ← required by GSAP plugin ${name}`, 'color:#00bcd4')
+        if (import.meta.env.DEV) console.info(`%c[APEX/DEPMAN] Auto-including gsap ← required by GSAP plugin ${name}`, 'color:#00bcd4')
         toLoad.add('gsap')
         visit('gsap')
       }
@@ -239,7 +274,7 @@ export default class DependencyManager extends EventEmitter {
     requestedNames.forEach(visit)
 
     const loadOrder = order.reverse()
-    console.log('%cDependency load order:', 'color:#ff9d', loadOrder)
+    if (import.meta.env.DEV) console.log('%cDependency load order:', 'color:#ff9d', loadOrder)
     return loadOrder
   }
 
