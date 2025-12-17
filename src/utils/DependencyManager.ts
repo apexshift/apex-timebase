@@ -1,8 +1,8 @@
-import depsConfig from '@/config/dependencies.json' with { type: 'json' }
+import siteConfig from '@/config/site.config.json' with { type: 'json' }
 import EventEmitter from '@/events/EventEmitter'
 
 
-interface DepsConfig {
+interface SiteConfig {
   core: string[]
   gsap_plugins: string[]
   instantiate?: string[]
@@ -129,8 +129,8 @@ export default class DependencyManager extends EventEmitter {
   // 1. Load dependencies with config override
   async #loadDependencies(override: Partial<{ core: string[]; gsap_plugins: string[]; lenisConfig: Record<string, any>; preferredScroller: 'lenis' | 'ScrollSmoother' }> = {}) {
     const config = {
-      deps: override.core ?? depsConfig.core,
-      plugins: override.gsap_plugins ?? depsConfig.gsap_plugins
+      deps: override.core ?? siteConfig.core,
+      plugins: override.gsap_plugins ?? siteConfig.gsap_plugins
     }
 
     const all = [...new Set([...config.deps, ...config.plugins])]
@@ -151,10 +151,10 @@ export default class DependencyManager extends EventEmitter {
           const module = await loader()
           let instance = module.default ?? module[name] ?? module
 
-          if(name === "lenis" && depsConfig.instantiate?.includes(name)) {
-            const lenisConfig = override.lenisConfig ?? depsConfig.lenisConfig ?? {}
+          if(name === "lenis" && siteConfig.instantiate?.includes(name)) {
+            const lenisConfig = override.lenisConfig ?? siteConfig.lenisConfig ?? {}
             instance = new instance(lenisConfig)
-          } else if(depsConfig.instantiate?.includes(name)) {
+          } else if(siteConfig.instantiate?.includes(name)) {
             instance = new instance()
           }
 
@@ -191,7 +191,7 @@ export default class DependencyManager extends EventEmitter {
   #resolveScrollConflict(override: Partial<{ core: string[]; gsap_plugins: string[]; lenisConfig: Record<string, any>; preferredScroller: 'lenis' | 'ScrollSmoother' }> = {}) {
     if (!this.#deps.lenis || !this.#deps.ScrollSmoother) return
 
-    const preferred = override.preferredScroller ?? depsConfig.preferredScroller ?? 'lenis'
+    const preferred = override.preferredScroller ?? siteConfig.preferredScroller ?? 'lenis'
 
     let disabled = null
     let enabled = null
@@ -241,7 +241,7 @@ export default class DependencyManager extends EventEmitter {
   // 5. Resolve dependency graph – auto-include and correct load order (gsap phase)
   #resolveGsapDependencyGraph(requestedNames: string[]) {
     const GSAP_PLUGIN_NAMES = new Set(Object.keys(gsapPlugins))
-    const userGraph = depsConfig.dependencyGraph || {}
+    const userGraph = siteConfig.dependencyGraph || {}
     const graph = {...GSAP_DEPENDENCY_GRAPH, ...userGraph}
 
     const toLoad = new Set(requestedNames)

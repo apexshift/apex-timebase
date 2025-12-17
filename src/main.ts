@@ -8,7 +8,7 @@ const manager = DependencyManager.getInstance()
 // Full demo override – uncomment for complete feature showcase
 manager.init({
   core: ['lenis', 'gsap'],
-  gsap_plugins: ['ScrollTrigger', 'SplitText', 'GSDevTools', 'Flip']
+  gsap_plugins: ['ScrollTrigger', 'SplitText']
 })
 
 // Basic init (uses config)
