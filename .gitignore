@@ -56,3 +56,7 @@ pids
 # Temporary folders
 tmp/
 temp/
+
+# Cache/Files created during hook runs (optional, but good hygiene)
+.eslintcache
+.prettierignore.cache
