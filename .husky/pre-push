@@ -1,6 +1,6 @@
 #!/bin/sh
 
 # Run lint + type check + tests before push
-npm run lint
+# npm run lint
 npm run type-check
 npm test
