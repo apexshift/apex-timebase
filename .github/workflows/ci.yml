@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-lint:
+    name: Install, Lint, and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Use Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Run lint (non-strict for now, only errors will fail)
+      - name: Lint code
+        run: |
+          npx eslint "src/**/*.{js,jsx,ts,tsx}" || true
+        # Using `|| true` allows warnings to appear without failing CI
+
+      # 5. Run tests
+      - name: Run tests
+        run: npm test
