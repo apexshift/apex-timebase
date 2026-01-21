@@ -3,7 +3,7 @@
 import type DependencyManager from '@/utils/DependencyManager';
 
 interface ApexGlobal {
-  deps?: Record<string, any>;
+  deps?: Record<string, unknown>;
   DependencyManager?: DependencyManager;
 }
 

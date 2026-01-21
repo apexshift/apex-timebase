@@ -3,5 +3,5 @@ export default {
   singleQuote: true,
   printWidth: 100,
   trailingComma: 'all',
-  tabSize: 2,
+  //tabSize: 2,
 };
