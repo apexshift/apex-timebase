@@ -15,6 +15,7 @@
     "type-check": "tsc --noEmit",
     "lint:staged": "lint-staged",
     "test": "vitest run",
+    "test:ui": "vitest --ui",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "prepare": "husky"
@@ -26,6 +27,7 @@
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "@vitest/coverage-istanbul": "^4.0.16",
+    "@vitest/ui": "^4.0.17",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
@@ -37,7 +39,7 @@
     "prettier": "^3.8.0",
     "typescript-eslint": "^8.53.1",
     "vite": "^7.3.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   },
   "dependencies": {
     "gsap": "^3.14.2",

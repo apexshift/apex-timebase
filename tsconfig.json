@@ -14,8 +14,15 @@
     "noEmit": true,
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"],
+      "@/*": ["*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "tests/**/*.test.ts", "vite.config.js", "vitest.config.ts", "global.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "tests/**/*.test.ts",
+    "vite.config.mjs",
+    "vitest.config.ts",
+    "global.d.ts"
+  ]
 }
