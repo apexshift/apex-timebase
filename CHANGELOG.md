@@ -3,9 +3,7 @@
 All notable changes to `@apexshift/timebase` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
-
-### Phase 0 — Sprint Preparation
+## [v1.0.1] - 2025-01-21
 
 **Added**
 
