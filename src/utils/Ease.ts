@@ -1,5 +1,4 @@
 import CubicBezier from './CubicBezier';
-import { Vector } from '../types/VectorMath';
 
 export type EasingFunction = (t: number) => number;
 

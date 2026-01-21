@@ -6,8 +6,8 @@
  *
  * Designed for internal use in APEX/DEPMAN – lightweight and reliable.
  */
-export default class EventEmitter {
-  #listeners = new Map<string, Set<(payload: any) => void>>();
+export default class EventEmitter<Payload = unknown> {
+  private listeners = new Map<string, Set<(payload: Payload) => void>>();
 
   /**
    * Subscribe to an event.
@@ -16,11 +16,11 @@ export default class EventEmitter {
    * @param callback - Function called when event is emitted
    * @returns Unsubscribe function
    */
-  on(event: string, callback: (payload: any) => void): () => void {
-    if (!this.#listeners.has(event)) {
-      this.#listeners.set(event, new Set());
+  on(event: string, callback: (payload: Payload) => void): () => void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
     }
-    this.#listeners.get(event)!.add(callback);
+    this.listeners.get(event)!.add(callback);
     return () => this.off(event, callback);
   }
 
@@ -31,8 +31,8 @@ export default class EventEmitter {
    * @param callback - Function called on first emission
    * @returns Unsubscribe function
    */
-  once(event: string, callback: (payload: any) => void): () => void {
-    const unsub = this.on(event, (payload: any) => {
+  once(event: string, callback: (payload: Payload) => void): () => void {
+    const unsub = this.on(event, (payload: Payload) => {
       unsub();
       callback(payload);
     });
@@ -45,8 +45,8 @@ export default class EventEmitter {
    * @param event - The event name
    * @param callback - The callback to remove
    */
-  off(event: string, callback: (payload: any) => void): void {
-    this.#listeners.get(event)?.delete(callback);
+  off(event: string, callback: (payload: Payload) => void): void {
+    this.listeners.get(event)?.delete(callback);
   }
 
   /**
@@ -55,8 +55,8 @@ export default class EventEmitter {
    * @param event - The event name
    * @param payload - Optional data passed to callbacks
    */
-  emit(event: string, payload?: any): void {
-    this.#listeners.get(event)?.forEach((cb: (payload: any) => void) => {
+  emit(event: string, payload: Payload): void {
+    this.listeners.get(event)?.forEach((cb) => {
       try {
         cb(payload);
       } catch (error) {
@@ -71,6 +71,6 @@ export default class EventEmitter {
    * Useful for cleaning up during testing or reset.
    */
   removeAllListeners(): void {
-    this.#listeners.clear();
+    this.listeners.clear();
   }
 }

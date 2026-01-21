@@ -1,7 +1,6 @@
 import { type Vector, type Point } from '../types/VectorMath';
-import Ease from './Ease';
 
-export default class CubicBezier extends Ease {
+export default class CubicBezier {
   private readonly epsilon: number = 1e-6;
   private readonly maxIterations: number = 12;
   #vector: Vector;
@@ -18,7 +17,6 @@ export default class CubicBezier extends Ease {
    * @param y2 - Y coordinate of second control point
    */
   constructor(x1: number, y1: number, x2: number, y2: number) {
-    super();
     this.#vector = { x1, y1, x2, y2 };
     this.#pointC = { a: this.#coefficientC(x1), b: this.#coefficientC(y1) };
     this.#pointB = { a: this.#coefficientB(x2, x1), b: this.#coefficientB(y2, y1) };
@@ -26,13 +24,15 @@ export default class CubicBezier extends Ease {
   }
 
   sample = (t: number): number => {
-    t = Ease.clamp(t);
+    t = this.#clamp(t);
     if (t <= 0) return 0;
     if (t >= 1) return 1;
 
     const x = this.#solveCurveX(t);
     return this.#sampleCurveY(x);
   };
+
+  #clamp = (t: number): number => Math.max(0, Math.min(1, t));
 
   #coefficientA = (b: number, a: number): number =>
     1 - this.#coefficientC(a) - this.#coefficientB(b, a);

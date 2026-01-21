@@ -5,7 +5,7 @@
   "preferredScroller": "lenis",
   "lenisConfig": {
     "duration": 1.2,
-    "easing": "easeOutExpo",
+    "easing": "outExpo",
     "smoothWheel": true,
     "smoothTouch": false,
     "normalizeWheel": true

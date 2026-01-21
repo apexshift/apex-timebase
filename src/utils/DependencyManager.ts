@@ -1,11 +1,8 @@
 import siteConfig from '@/config/site.config.json' with { type: 'json' };
 import EventEmitter from '@/events/EventEmitter';
-import Ease from './Ease';
-import { EasingFunction } from 'lenis';
+import Ease, { type EasingFunction } from './Ease';
 
-/**
- * Strongly typed site config
- */
+/* Types */
 interface SiteConfig {
   core: string[];
   gsap_plugins: string[];
@@ -15,9 +12,6 @@ interface SiteConfig {
   dependencyGraph?: Record<string, string[]>;
 }
 
-/**
- * Override for per-page config
- */
 type Override = Partial<{
   core: string[];
   gsap_plugins: string[];
@@ -25,9 +19,6 @@ type Override = Partial<{
   preferredScroller: 'lenis' | 'ScrollSmoother';
 }>;
 
-/**
- * Lenis configuration type
- */
 interface LenisConfig {
   duration?: number;
   easing?: EasingFunction | string;
@@ -35,17 +26,43 @@ interface LenisConfig {
   [key: string]: unknown; // fallback for additional options
 }
 
-/**
- * Core dependencies with loaders
- */
+interface LoadedDeps {
+  gsap?: typeof import('gsap');
+  lenis?: Lenis;
+  ScrollTrigger?: ScrollTrigger;
+  ScrollSmoother?: ScrollSmoother;
+  [plugin: string]: unknown;
+}
+
+interface Lenis {
+  destroy?: () => void;
+  on?: (event: string, callback: (...args: unknown[]) => void) => void;
+  raf?: (delta: number) => void;
+}
+
+interface ScrollTrigger {
+  update?: () => void;
+}
+
+interface ScrollSmoother {
+  destroy?: () => void;
+}
+
+interface GsapWithPlugins {
+  registerPlugin: (...plugins: unknown[]) => void;
+  ticker: {
+    add: (cb: (time: number) => void) => void;
+    lagSmoothing?: (threshold: number) => void;
+  };
+}
+
+/** Core dependecy loaders */
 const coreDependencies = {
   gsap: () => import('gsap'),
   lenis: () => import('lenis'),
 };
 
-/**
- * GSAP plugin loaders
- */
+/** GSAP plugin loaders */
 const gsapPlugins = {
   CustomBounce: () => import('gsap/CustomBounce'),
   CustomEase: () => import('gsap/CustomEase'),
@@ -72,9 +89,13 @@ const gsapPlugins = {
   TextPlugin: () => import('gsap/TextPlugin'),
 };
 
-/**
- * GSAP plugin dependency graph
- */
+/** Shallow merged loaders */
+const loaders: Record<string, () => Promise<unknown>> = {
+  ...coreDependencies,
+  ...gsapPlugins,
+};
+
+/** GSAP plugin dependency graph */
 const GSAP_DEPENDENCY_GRAPH = {
   CustomBounce: ['CustomEase'],
   CustomWiggle: ['CustomEase'],
@@ -82,52 +103,11 @@ const GSAP_DEPENDENCY_GRAPH = {
   ScrollSmoother: ['ScrollTrigger'],
 };
 
-/**
- * Combined loaders typed as unknown
- */
-const loaders: Record<string, () => Promise<unknown>> = {
-  ...coreDependencies,
-  ...gsapPlugins,
-};
-
-/**
- * Loaded dependencies interface
- */
-interface LoadedDeps {
-  gsap?: typeof import('gsap');
-  lenis?: Lenis;
-  ScrollTrigger?: ScrollTrigger;
-  ScrollSmoother?: ScrollSmoother;
-  [plugin: string]: unknown;
-}
-
-/**
- * Lenis type
- */
-interface Lenis {
-  destroy?: () => void;
-  on?: (event: string, callback: (...args: unknown[]) => void) => void;
-  raf?: (delta: number) => void;
-}
-
-/**
- * ScrollTrigger type
- */
-interface ScrollTrigger {
-  update?: () => void;
-}
-
-/**
- * ScrollSmoother type
- */
-interface ScrollSmoother {
-  destroy?: () => void;
-}
-
+/** Dependency Manager */
 export default class DependencyManager extends EventEmitter {
   static #instance: DependencyManager | null = null;
-  #deps: LoadedDeps = {}; // replaced any with strongly typed LoadedDeps
-  #ready = false;
+  private deps: LoadedDeps = {};
+  private ready: boolean = false;
 
   constructor() {
     super();
@@ -136,17 +116,18 @@ export default class DependencyManager extends EventEmitter {
     }
   }
 
+  /* Singleton */
   static getInstance(): DependencyManager {
     if (!this.#instance) this.#instance = new DependencyManager();
     return this.#instance as DependencyManager;
   }
 
   get isReady(): boolean {
-    return this.#ready;
+    return this.ready;
   }
 
   get loaded(): Readonly<LoadedDeps> {
-    return Object.freeze({ ...this.#deps });
+    return Object.freeze({ ...this.deps });
   }
 
   async init(override: Override = {}): Promise<void> {
@@ -195,7 +176,16 @@ export default class DependencyManager extends EventEmitter {
             const rawConfig = override.lenisConfig ?? siteConfig.lenisConfig ?? {};
 
             // Resolve easing string -> function
-            const easingFn = rawConfig.easing ? Ease.resolve(rawConfig.easing) : (t: number) => t;
+            let easingFn: EasingFunction;
+
+            if (typeof rawConfig.easing === 'string') {
+              easingFn = Ease.resolve(rawConfig.easing);
+            } else if (typeof rawConfig.easing === 'function') {
+              easingFn = rawConfig.easing;
+            } else {
+              easingFn = (t: number) => t;
+            }
+
             const lenisConfig: LenisConfig = {
               ...rawConfig,
               easing: easingFn,
@@ -205,7 +195,7 @@ export default class DependencyManager extends EventEmitter {
             instance = new (instance as new () => unknown)(); // generic constructor
           }
 
-          this.#deps[name] = instance as LoadedDeps[string]; // cast to LoadedDeps
+          this.deps[name] = instance as LoadedDeps[string]; // cast to LoadedDeps
           this.emit('dep:loaded', { name, instance });
           if (import.meta.env.DEV) console.log(`%c${name} loaded`, 'color:#00ff9d');
         } catch (err) {
@@ -218,13 +208,13 @@ export default class DependencyManager extends EventEmitter {
 
   // 2. Auto-register GSAP plugins
   #registerGsapPlugins() {
-    if (!this.#deps.gsap) return;
+    if (!this.deps.gsap) return;
 
-    Object.keys(this.#deps).forEach((name) => {
-      const plugin = this.#deps[name];
+    Object.keys(this.deps).forEach((name) => {
+      const plugin = this.deps[name];
       if (typeof plugin === 'function' || (typeof plugin === 'object' && plugin !== null)) {
         try {
-          (this.#deps.gsap as any).registerPlugin(plugin); // still any, but safe
+          (this.deps.gsap as unknown as GsapWithPlugins).registerPlugin(plugin);
           this.emit('plugin:registered', { name, plugin });
         } catch (err) {
           this.emit('error', { name, error: err });
@@ -236,7 +226,7 @@ export default class DependencyManager extends EventEmitter {
 
   // 3. Resolve scroll conflict
   #resolveScrollConflict(override: Override = {}) {
-    if (!this.#deps.lenis || !this.#deps.ScrollSmoother) return;
+    if (!this.deps.lenis || !this.deps.ScrollSmoother) return;
 
     const preferred = override.preferredScroller ?? siteConfig.preferredScroller ?? 'lenis';
     let disabled = null;
@@ -245,13 +235,13 @@ export default class DependencyManager extends EventEmitter {
     if (preferred === 'ScrollSmoother') {
       disabled = 'Lenis';
       enabled = 'ScrollSmoother';
-      (this.#deps.lenis as Lenis).destroy?.(); // optional chaining
-      delete this.#deps.lenis;
+      (this.deps.lenis as Lenis).destroy?.(); // optional chaining
+      delete this.deps.lenis;
     } else {
       disabled = 'ScrollSmoother';
       enabled = 'Lenis';
-      (this.#deps.ScrollSmoother as ScrollSmoother).destroy?.();
-      delete this.#deps.ScrollSmoother;
+      (this.deps.ScrollSmoother as ScrollSmoother).destroy?.();
+      delete this.deps.ScrollSmoother;
     }
 
     const message = `[APEX/DEPMAN] Scroll conflict resolved: ${enabled} enabled, ${disabled} disabled.`;
@@ -261,21 +251,22 @@ export default class DependencyManager extends EventEmitter {
 
   // 4. Smart Lenis sync
   #syncLenisWithGsap() {
-    if (!this.#deps.lenis || !this.#deps.gsap) return;
+    if (!this.deps.lenis || !this.deps.gsap) return;
 
     try {
-      const lenis = this.#deps.lenis as Lenis;
-      const scrollTrigger = this.#deps.ScrollTrigger as ScrollTrigger;
+      const lenis = this.deps.lenis as Lenis;
+      const scrollTrigger = this.deps.ScrollTrigger as ScrollTrigger;
 
       if (lenis.on && scrollTrigger?.update) {
         lenis.on('scroll', () => scrollTrigger.update?.()); // <-- fix TS: don't invoke immediately
       }
 
-      (this.#deps.gsap as any).ticker.add((time: number) => {
+      const gsap = this.deps.gsap as unknown as GsapWithPlugins;
+      gsap.ticker.add((time: number) => {
         lenis.raf?.(time * 1000); // optional chaining
       });
 
-      (this.#deps.gsap as any).ticker.lagSmoothing?.(0);
+      gsap.ticker.lagSmoothing?.(0);
 
       if (import.meta.env.DEV)
         console.log(
@@ -343,7 +334,7 @@ export default class DependencyManager extends EventEmitter {
     window.Apex.deps = this.loaded;
     window.Apex.DependencyManager = this;
 
-    this.#ready = true;
+    this.ready = true;
     this.emit('ready', this.loaded);
   }
 }
